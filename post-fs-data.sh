@@ -2,16 +2,21 @@
 
 MODPATH="${0%/*}"
 MODNAME="${MODPATH##*/}"
-MAGISKTMP="$(magisk --path)" || MAGISKTMP=/sbin
-
-if [ "$(magisk -V)" -lt 26302 ] || { [ -x /data/adb/ksud ] && [ "$(/data/adb/ksud -V)" -lt 10818 ]; }; then
-    touch "$MODPATH/disable"
+if command -v magisk >/dev/null 2>&1; then
+  MAGISKTMP="$(magisk --path)"
+else
+  MAGISKTMP=/data/adb/ksu/bin
 fi
+KSU_VER_CODE=$(ksud kernel version 2>/dev/null | grep -o '[0-9]\+' | tail -1)
 
 # Using util_functions.sh
 [ -f "$MODPATH/util_functions.sh" ] && . "$MODPATH/util_functions.sh" || abort "! util_functions.sh not found!"
 
-# Cleanup and replacements (avoiding duplicates with service.sh)
+# Early property cleanup stage.
+#
+# Performs ROM fingerprint normalization and
+# property sanitization before late-boot service.sh
+# adjustments and profile replay.
 for prop in $(getprop | grep -E "lineage|aosp_|eng.|dev-keys|test-keys|userdebug" | cut -d ":" -f 1 | tr -d '[]'); do
     replace_value_resetprop "$prop" "lineageos." ""
     replace_value_resetprop "$prop" "lineage_" ""
@@ -33,3 +38,13 @@ for prefix in system vendor system_ext product oem odm vendor_dlkm odm_dlkm boot
         replace_value_resetprop "$prop" "aosp_" ""
     done
 done
+
+
+# Early profile replay.
+#
+# Ensures profile-defined properties are available
+# as early as possible during boot.
+#
+# service.sh will replay them again later to handle
+# late-loading properties and vendor overrides.
+apply_custom_props

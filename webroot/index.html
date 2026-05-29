@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+<title>Sensitive Props Runtime</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+
+    margin: 0;
+    padding: 0;
+
+    background: #0f1115;
+    color: #e8eaed;
+
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+}
+
+.container {
+
+    max-width: 950px;
+
+    margin: auto;
+    padding: 24px;
+}
+
+h1 {
+
+    margin-top: 0;
+    margin-bottom: 8px;
+
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.subtitle {
+
+    opacity: 0.7;
+
+    margin-bottom: 24px;
+
+    font-size: 0.95rem;
+}
+
+.card {
+
+    background: #171a21;
+
+    border:
+        1px solid
+        #2b313d;
+
+    border-radius: 16px;
+
+    padding: 20px;
+
+    box-shadow:
+        0 4px 18px rgba(0,0,0,0.35);
+}
+
+.card-title {
+
+    font-size: 1.1rem;
+    font-weight: 600;
+
+    margin-bottom: 18px;
+}
+
+.modal {
+
+    position: fixed;
+
+    inset: 0;
+
+    background:
+        rgba(0,0,0,0.65);
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    z-index: 999;
+}
+
+.hidden {
+
+    display: none;
+}
+
+.modal-content {
+
+    width: 90%;
+    max-width: 420px;
+
+    background: #171a21;
+
+    border:
+        1px solid #2d3440;
+
+    border-radius: 18px;
+
+    padding: 20px;
+}
+
+.modal-title {
+
+    font-size: 1.15rem;
+    font-weight: 700;
+
+    margin-bottom: 16px;
+}
+
+.modal-actions {
+
+    display: flex;
+
+    gap: 10px;
+
+    margin-top: 16px;
+}
+
+.profile-error {
+
+    margin-top: 10px;
+
+    color: #ff6b6b;
+
+    font-size: 0.9rem;
+
+    font-weight: 500;
+}
+
+.profile-controls {
+
+    display: flex;
+
+    gap: 10px;
+
+    margin-bottom: 18px;
+
+    flex-wrap: wrap;
+
+    align-items: center;
+}
+
+.profile-controls select {
+
+    flex: 1;
+
+    min-width: 140px;
+}
+
+.profile-btn {
+
+    background: #252b36;
+    color: white;
+}
+
+.delete-profile-btn {
+
+    background: #d64545;
+}
+
+.prop-list {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 14px;
+}
+
+.prop-item {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr
+        1fr
+        auto
+        auto;
+
+    gap: 10px;
+
+    align-items: center;
+}
+
+input,
+select {
+
+    width: 100%;
+
+    padding:
+        11px
+        13px;
+
+    border-radius: 12px;
+
+    border:
+        1px solid
+        #303745;
+
+    background: #101319;
+
+    color: white;
+
+    outline: none;
+}
+
+button {
+
+    border: none;
+
+    border-radius: 12px;
+
+    padding:
+        11px
+        14px;
+
+    cursor: pointer;
+
+    font-weight: 600;
+}
+
+.apply-btn {
+
+    background: #4c8dff;
+    color: white;
+}
+
+.delete-btn {
+
+    background: #d94b4b;
+    color: white;
+}
+
+.add-btn {
+
+    width: 100%;
+
+    margin-top: 18px;
+
+    background: #262d39;
+    color: white;
+}
+
+.status {
+
+    margin-top: 18px;
+
+    opacity: 0.82;
+
+    font-size: 0.95rem;
+
+    white-space: pre-wrap;
+}
+
+.footer {
+
+    margin-top: 28px;
+
+    opacity: 0.5;
+
+    font-size: 0.9rem;
+}
+
+@media (max-width: 760px) {
+
+    .prop-item {
+
+        grid-template-columns: 1fr;
+    }
+
+    .container {
+
+        padding: 16px;
+    }
+
+    .profile-controls {
+
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Sensitive Props Runtime</h1>
+
+<div class="subtitle">
+The persistent custom property manager for KernelSU, Magisk and Apatch
+</div>
+
+<div class="card">
+
+<div class="card-title">
+Persistent Properties
+</div>
+
+<div class="profile-controls">
+
+<select id="profile-select"></select>
+
+<button
+    class="profile-btn"
+    onclick="createProfile()">
+
+    Create Profile
+
+</button>
+
+<button
+    class="profile-btn delete-profile-btn"
+    onclick="deleteProfile()">
+
+    Delete Profile
+
+</button>
+
+</div>
+
+<div
+    class="prop-list"
+    id="prop-list">
+
+</div>
+
+<button
+    class="add-btn"
+    onclick="addPropRow()">
+
+    + Add Property
+
+</button>
+
+<div
+    class="status"
+    id="status">
+
+    Ready
+
+</div>
+
+</div>
+
+<div class="footer">
+
+Custom props are automatically reapplied after reboot.
+</div>
+
+<div
+    id="profile-modal"
+    class="modal hidden">
+
+    <div class="modal-content">
+
+        <div class="modal-title">
+            Create Profile
+        </div>
+
+        <input
+            id="new-profile-name"
+            placeholder="Profile name">
+
+        <div
+            id="profile-error"
+            class="profile-error hidden">
+        </div>
+
+        <div class="modal-actions">
+
+            <button
+                class="apply-btn"
+                onclick="confirmCreateProfile()">
+
+                Create
+
+            </button>
+
+            <button
+                class="delete-btn"
+                onclick="closeProfileModal()">
+
+                Cancel
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+<script>
+
+/* =========================
+   EARLY DEBUG
+========================= */
+
+// document.body.style.border =
+//    "4px solid red";
+
+/* =========================
+   STATE
+========================= */
+
+let MODULE_ID;
+let MODULE_PATH;
+let PROFILE_DIR;
+
+
+const propList =
+    document.getElementById("prop-list");
+
+const statusBox =
+    document.getElementById("status");
+
+let profiles = [
+    "default",
+    "banking",
+    "gaming",
+    "stealth"
+];
+
+const profileProps = {
+
+    default: [
+        {
+            key: "ro.debuggable",
+            value: "0"
+        },
+        {
+            key: "ro.secure",
+            value: "1"
+        }
+    ],
+
+    banking: [
+        {
+            key: "ro.boot.verifiedbootstate",
+            value: "green"
+        }
+    ],
+
+    gaming: [],
+
+    stealth: []
+};
+
+let currentProfile = "default";
+
+
+// Storage
+
+const STORAGE_KEY =
+    "sensitive_props_state";
+
+function saveState() {
+
+    const state = {
+
+        profiles,
+        profileProps,
+        currentProfile
+    };
+
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(state)
+    );
+}
+
+function loadStateFromStorage() {
+
+    try {
+
+        const raw =
+            localStorage.getItem(
+                STORAGE_KEY
+            );
+
+        if (!raw)
+            return;
+
+        const parsed =
+            JSON.parse(raw);
+
+        if (parsed.profiles)
+            profiles =
+                parsed.profiles;
+
+        if (parsed.profileProps)
+            Object.assign(
+                profileProps,
+                parsed.profileProps
+            );
+
+        if (parsed.currentProfile)
+            currentProfile =
+                parsed.currentProfile;
+
+    } catch (err) {
+
+        console.error(err);
+
+        setStatus(
+            "Failed loading local state"
+        );
+    }
+}
+
+
+/* =========================
+   STATUS
+========================= */
+
+function setStatus(text) {
+
+    statusBox.innerText = text;
+}
+
+
+/* =========================
+   HELPERS
+========================= */
+
+function showProfileError(text) {
+
+    const el =
+        document.getElementById(
+            "profile-error"
+        );
+
+    el.innerText = text;
+
+    el.classList.remove(
+        "hidden"
+    );
+}
+
+function hideProfileError() {
+
+    const el =
+        document.getElementById(
+            "profile-error"
+        );
+
+    el.innerText = "";
+
+    el.classList.add(
+        "hidden"
+    );
+}
+
+async function ksuExec(cmd) {
+
+    try {
+
+        return await window.ksu.exec(cmd);
+
+    } catch (err) {
+
+        console.error(err);
+
+        setStatus(
+            "KSU exec failed:\n" + err
+        );
+
+        return null;
+    }
+}
+
+async function restoreOriginalProp(prop) {
+
+    await ksuExec(
+        `resetprop --delete ${prop}`
+    );
+}
+
+async function detectModule() {
+
+    try {
+
+        const raw =
+            await window.ksu.moduleInfo();
+
+        const info =
+            JSON.parse(raw);
+
+        MODULE_ID =
+            info.id;
+
+        MODULE_PATH =
+            info.moduleDir;
+
+        PROFILE_DIR =
+            `${MODULE_PATH}/profiles`;
+
+        console.log(
+            "Detected module:",
+            info
+        );
+
+        statusBox.innerText +=
+            "\n\nModule detected:\n" +
+            JSON.stringify(
+                info,
+                null,
+                2
+            );
+
+    } catch (err) {
+
+        console.error(err);
+
+        setStatus(
+            "Module detection failed:\n" +
+            err
+        );
+    }
+}
+
+/* =========================
+   PROFILE RENDER
+========================= */
+
+function loadProfiles() {
+
+    const select =
+        document.getElementById(
+            "profile-select"
+        );
+
+    select.innerHTML = "";
+
+    profiles.forEach(profile => {
+
+        const option =
+            document.createElement("option");
+
+        option.value = profile;
+        option.innerText = profile;
+
+        if (profile === currentProfile)
+            option.selected = true;
+
+        select.appendChild(option);
+    });
+}
+
+
+async function saveCurrentProfile() {
+
+    const props =
+        profileProps[currentProfile] || [];
+
+    let content = "";
+
+    props.forEach(prop => {
+
+        content +=
+            `${prop.key}=${prop.value}\n`;
+    });
+
+    const escaped =
+        content
+            .replace(/\\/g, "\\\\")
+            .replace(/"/g, '\\"')
+            .replace(/\$/g, "\\$")
+            .replace(/`/g, "\\`");
+
+    const cmd = `
+cat > "${PROFILE_DIR}/${currentProfile}.prop" <<EOF
+${escaped}
+EOF
+`;
+
+    await ksuExec(cmd);
+}
+
+async function persistCurrentProfile() {
+
+    await ksuExec(
+        `echo '${currentProfile}' > \
+${PROFILE_DIR}/current_profile`
+    );
+}
+
+/* =========================
+   PROP ROW
+========================= */
+
+function createPropRow(
+    key = "",
+    value = ""
+) {
+
+    const row =
+        document.createElement("div");
+
+    row.className = "prop-item";
+
+    const keyInput =
+        document.createElement("input");
+
+    keyInput.placeholder =
+        "Property";
+
+    keyInput.value = key;
+
+    const valueInput =
+        document.createElement("input");
+
+    valueInput.placeholder =
+        "Value";
+
+    valueInput.value = value;
+
+    const applyBtn =
+        document.createElement("button");
+
+    applyBtn.className =
+        "apply-btn";
+
+    applyBtn.innerText =
+        "Apply";
+
+    const deleteBtn =
+        document.createElement("button");
+
+    deleteBtn.className =
+        "delete-btn";
+
+    deleteBtn.innerText =
+        "Delete";
+
+    applyBtn.onclick = async () => {
+
+        const prop =
+            keyInput.value.trim();
+
+        const val =
+            valueInput.value.trim();
+
+        if (!prop) {
+
+            setStatus(
+                "Property name required"
+            );
+
+            return;
+        }
+
+        const list =
+            profileProps[currentProfile];
+
+        const existing =
+            list.find(
+                p => p.key === prop
+            );
+
+        if (existing) {
+
+            existing.value = val;
+
+
+        } else {
+
+            list.push({
+                key: prop,
+                value: val
+            });
+        }
+
+        saveState();
+
+
+        await ksuExec(
+            `resetprop ${prop} "${val}"`
+        );
+
+        await saveCurrentProfile();
+
+        setStatus(
+            `Applied ${prop}=${val}`
+        );
+
+    };
+
+    deleteBtn.onclick = async () => {
+
+        const prop =
+            keyInput.value.trim();
+
+        profileProps[currentProfile] =
+            profileProps[currentProfile]
+            .filter(
+                p => p.key !== prop
+            );
+
+        row.remove();
+
+        saveState();
+
+        await restoreOriginalProp(prop);
+
+        await saveCurrentProfile();
+
+        setStatus(
+            `Deleted ${prop}`
+        );
+    };
+
+    row.appendChild(keyInput);
+    row.appendChild(valueInput);
+    row.appendChild(applyBtn);
+    row.appendChild(deleteBtn);
+
+    propList.appendChild(row);
+}
+
+/* =========================
+   LOAD PROPS
+========================= */
+
+function loadProps() {
+
+    propList.innerHTML = "";
+
+    const props =
+        profileProps[currentProfile] || [];
+
+    props.forEach(prop => {
+
+        createPropRow(
+            prop.key,
+            prop.value
+        );
+    });
+
+    setStatus(
+        `Loaded profile: ${currentProfile}`
+    );
+}
+
+/* =========================
+   ADD PROP
+========================= */
+
+function addPropRow() {
+
+    createPropRow();
+}
+
+/* =========================
+   SWITCH PROFILE
+========================= */
+
+async function switchProfile() {
+
+    const select =
+        document.getElementById(
+            "profile-select"
+        );
+
+    currentProfile =
+        select.value;
+
+    loadProps();
+
+    saveState();
+
+    await persistCurrentProfile();
+
+    setStatus(
+        `Switched to ${currentProfile}`
+    );
+}
+
+/* =========================
+   CREATE PROFILE
+========================= */
+
+function createProfile() {
+
+    hideProfileError();
+
+    document
+        .getElementById(
+            "profile-modal"
+        )
+        .classList
+        .remove("hidden");
+
+    document
+        .getElementById(
+            "new-profile-name"
+        )
+        .focus();
+}
+
+function closeProfileModal() {
+
+    hideProfileError();
+
+    document
+        .getElementById(
+            "profile-modal"
+        )
+        .classList
+        .add("hidden");
+
+    document
+        .getElementById(
+            "new-profile-name"
+        )
+        .value = "";
+}
+
+
+async function confirmCreateProfile() {
+
+    const input =
+        document.getElementById(
+            "new-profile-name"
+        );
+
+    const cleaned =
+        input.value.trim();
+
+    if (!cleaned) {
+
+        showProfileError(
+            "Profile name required"
+        );
+
+        return;
+    }
+
+    if (
+        !/^[a-z0-9_-]+$/i.test(
+            cleaned
+        )
+    ) {
+
+        showProfileError(
+            "Only letters, numbers, _ and - are allowed"
+        );
+
+        return;
+    }
+
+    if (profiles.includes(cleaned)) {
+
+        showProfileError(
+            "Profile already exists"
+        );
+
+        return;
+    }
+
+    const valid =
+        /^[a-zA-Z0-9_-]+$/.test(cleaned);
+
+    if (!valid) {
+
+        setStatus(
+            "Only letters, numbers, _ and - are allowed"
+        );
+
+        return;
+    }
+
+    hideProfileError();
+
+    profiles.push(cleaned);
+
+    profileProps[cleaned] = [];
+
+    currentProfile = cleaned;
+
+    await ksuExec(
+        `touch "${PROFILE_DIR}/${cleaned}.prop"`
+    );
+
+    await persistCurrentProfile();
+
+    saveState();
+
+    loadProfiles();
+    loadProps();
+
+    closeProfileModal();
+
+    setStatus(
+        `Created profile ${cleaned}`
+    );
+}
+
+
+/* =========================
+   DELETE PROFILE
+========================= */
+
+async function deleteProfile() {
+
+    if (currentProfile === "default") {
+
+        setStatus(
+            "Default profile cannot be deleted"
+        );
+
+        return;
+    }
+
+    const profileToDelete =
+        currentProfile;
+
+    try {
+
+        await ksuExec(
+            `rm -f "${PROFILE_DIR}/${profileToDelete}.prop"`
+        );
+
+    } catch (err) {
+
+        console.error(err);
+    }
+
+    profiles =
+        profiles.filter(
+            p => p !== profileToDelete
+        );
+
+    delete profileProps[
+        profileToDelete
+    ];
+
+    currentProfile =
+        "default";
+
+    await persistCurrentProfile();
+
+    saveState();
+
+    loadProfiles();
+    loadProps();
+
+    setStatus(
+        `Deleted profile ${profileToDelete}`
+    );
+}
+
+/* =========================
+   EVENTS
+========================= */
+
+document
+    .getElementById(
+        "profile-select"
+    )
+    .addEventListener(
+        "change",
+        switchProfile
+    );
+
+/* =========================
+   INIT
+========================= */
+
+(async () => {
+
+    await detectModule();
+
+    loadStateFromStorage();
+
+    loadProfiles();
+    loadProps();
+
+
+    /*
+    setTimeout(
+        inspectBridge,
+        500
+    );
+    */
+
+})();
+
+
+/*
+setTimeout(
+    inspectModuleInfo,
+    1000
+);
+*/
+/* =========================
+   BRIDGE DISCOVERY
+========================= */
+/*
+ 
+async function inspectBridge() {
+
+    try {
+
+        if (!window.ksu) {
+
+            statusBox.innerText +=
+                "\n\nKSU bridge not found";
+
+            return;
+        }
+
+        const keys =
+            Object.keys(window.ksu);
+
+        statusBox.innerText +=
+            "\n\nKSU bridge detected\n\n" +
+            JSON.stringify(keys, null, 2);
+
+        console.log(
+            "window.ksu",
+            window.ksu
+        );
+
+        try {
+
+            const result =
+                await window.ksu.exec(
+                    "getprop ro.secure"
+                );
+
+            console.log(result);
+
+            statusBox.innerText +=
+                "\n\nEXEC TEST:\n" +
+                JSON.stringify(result, null, 2);
+
+        } catch (err) {
+
+            statusBox.innerText +=
+                "\n\nEXEC FAILED:\n" +
+                err;
+        }
+
+    } catch (err) {
+
+        statusBox.innerText +=
+            "\n\nBridge inspect failed:\n" +
+            err;
+    }
+}
+  
+
+setTimeout(() => {
+
+    const found = [];
+
+    for (const k in window) {
+
+        const lower =
+            k.toLowerCase();
+
+        if (
+            lower.includes("ksu") ||
+            lower.includes("kernel") ||
+            lower.includes("android")
+        ) {
+            found.push(k);
+        }
+    }
+
+    statusBox.innerText +=
+        "\n\nBridge scan:\n" +
+        JSON.stringify(found, null, 2);
+
+}, 500);
+
+async function inspectModuleInfo() {
+
+    try {
+
+        statusBox.innerText +=
+            "\n\n=== MODULE INFO ===\n";
+
+        statusBox.innerText +=
+            "\ntypeof moduleInfo: " +
+            typeof window.ksu.moduleInfo;
+
+        console.log(
+            "moduleInfo raw:",
+            window.ksu.moduleInfo
+        );
+
+        if (
+            typeof window.ksu.moduleInfo
+            === "function"
+        ) {
+
+            const result =
+                await window.ksu.moduleInfo();
+
+            console.log(
+                "moduleInfo()",
+                result
+            );
+
+            statusBox.innerText +=
+                "\n\nmoduleInfo():\n" +
+                JSON.stringify(
+                    result,
+                    null,
+                    2
+                );
+        }
+
+    } catch (err) {
+
+        statusBox.innerText +=
+            "\n\nmoduleInfo failed:\n" +
+            err;
+    }
+}
+*/
+
+</script>
+
+</body>
+</html>

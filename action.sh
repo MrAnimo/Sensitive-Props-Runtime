@@ -1,4 +1,4 @@
-#!/system/bin/busybox sh
+#!/system/bin/sh
 
 MODPATH="${0%/*}"
 
@@ -86,9 +86,9 @@ if [ "$VOL_RESULT" = "up" ]; then
   sh "$MODPATH/propscleaner.sh" &
   [ ! -f "$MODPATH/crontabs/root" ] && {
     mkdir -p "$MODPATH/crontabs"
-    echo "30 * * * * sh $MODPATH/propscleaner.sh > /dev/null 2>&1 &" | busybox crontab -c "$MODPATH/crontabs" -
+    echo "30 * * * * sh $MODPATH/propscleaner.sh > /dev/null 2>&1 &" | "$BUSYBOX" crontab -c "$MODPATH/crontabs" -
   }
-  [ -d "$MODPATH/crontabs" ] && busybox crond -bc "$MODPATH/crontabs" -L /dev/null > /dev/null 2>&1 &
+  [ -d "$MODPATH/crontabs" ] && "$BUSYBOX" crond -bc "$MODPATH/crontabs" -L /dev/null > /dev/null 2>&1 &
 
   ui_print "  ✅ Custom ROM spoofing ENABLED"
   ui_print ""
@@ -107,7 +107,7 @@ elif [ "$VOL_RESULT" = "down" ]; then
   vol_key_wait 15
 
     # Stop crond and remove crontab
-    busybox pkill -f "crond -bc $MODPATH/crontabs" 2>/dev/null
+    "$BUSYBOX" pkill -f "crond -bc $MODPATH/crontabs" 2>/dev/null
     rm -rf "$MODPATH/crontabs"
 
   if [ "$VOL_RESULT" = "up" ]; then

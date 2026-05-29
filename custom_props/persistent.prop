@@ -1,0 +1,4 @@
+# Custom persistent props
+# key=value
+
+ro.build.tags=release-keys

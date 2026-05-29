@@ -1,4 +1,4 @@
-#!/system/bin/busybox sh
+#!/system/bin/sh
 
 # Function that normalizes a boolean value and returns 0, 1, or a string
 # Usage: boolval "value"
@@ -27,12 +27,19 @@ set_permissions() {
     [ -e "$1" ] && chmod "$2" "$1" &>/dev/null
 }
 
-# resetprop-rs / resetprop routing helpers
+# Property backend abstraction layer.
+#
+# Transparently routes property operations to:
+#   - resetprop-rs
+#   - Magisk resetprop
+#
+# allowing the rest of the module to remain
+# backend-agnostic.
 _rp_get() {
     if [ -n "$RESETPROP_RS" ]; then
         "$RESETPROP_RS" "$1" 2>/dev/null
     else
-        resetprop -v "$1"
+        resetprop "$1"
     fi
 }
 
@@ -56,7 +63,10 @@ _rp_delete() {
     fi
 }
 
-# Function to construct arguments for resetprop based on prop name
+# Build resetprop arguments according to property type.
+#
+# persist.* -> persistent property mode
+# everything else -> normal runtime property mode
 _build_resetprop_args() {
     prop_name="$1"
     shift
@@ -80,6 +90,51 @@ check_resetprop() { # Reset a property if it exists and doesn't match the desire
 force_resetprop() { # Reset a property if it doesn't match the desired value (create if missing)
     VALUE="$(_rp_get "$1")"
     [ "$VALUE" != "$2" ] && _rp_set "$1" "$2"
+}
+
+# Runtime Profile System
+#
+# profiles/current_profile
+#   -> active profile selector
+#
+# profiles/*.prop
+#   -> persistent property sets
+#
+# Used by:
+#   - post-fs-data.sh
+#   - service.sh
+#   - KernelSU WebUI
+#
+# Every property found is reapplied using the
+# module's resetprop abstraction layer so that
+# profile changes survive reboots.
+#
+# Provides persistent runtime property orchestration.
+apply_custom_props() {
+
+    PROFILE_NAME=$(cat "$MODPATH/profiles/current_profile" 2>/dev/null)
+
+    [ -z "$PROFILE_NAME" ] && PROFILE_NAME="default"
+
+    PROP_FILE="$MODPATH/profiles/${PROFILE_NAME}.prop"
+
+    [ ! -f "$PROP_FILE" ] && return
+
+    while IFS='=' read -r key value; do
+
+        [ -z "$key" ] && continue
+
+        case "$key" in
+            \#*) continue ;;
+        esac
+
+        [ -z "$value" ] && continue
+
+        echo "Applying profile prop: $key=$value"
+
+        force_resetprop "$key" "$value"
+
+    done < "$PROP_FILE"
 }
 
 missing_resetprop() { # Reset a property only if it is missing or empty

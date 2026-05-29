@@ -8,4 +8,4 @@ download_resetprop_rs=true
 # true = enabled (default)
 # false = always disabled
 # Volume keys override this at install time.
-propscleaner_cron=true
+propscleaner_cron=false

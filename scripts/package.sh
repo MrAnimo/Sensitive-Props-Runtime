@@ -72,15 +72,19 @@ MODULE_VER=$(grep '^version=' "$PROJECT_ROOT/module.prop" | cut -d= -f2)
 
 MODULE_FILES=(
     META-INF
+    action.sh
     customize.sh
     service.sh
     post-fs-data.sh
     util_functions.sh
     module.prop
-    oem.rc
     sepolicy.rule
     uninstall.sh
     config.prop
+    propscleaner.sh
+    profiles
+    webroot
+    custom_props
 )
 
 package_zip() {
@@ -128,7 +132,7 @@ deploy_zip() {
     name=$(basename "$zip")
     bold "==> Deploying $name"
     adb push "$zip" /data/local/tmp/module.zip
-    adb shell "su -c '$INSTALL_CMD /data/local/tmp/module.zip'"
+    adb shell su -c "$INSTALL_CMD /data/local/tmp/module.zip"
     green "    Installed via $ROOT_PROVIDER"
 
     if [[ "$REBOOT" == true ]]; then

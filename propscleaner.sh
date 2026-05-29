@@ -1,4 +1,4 @@
-#!/system/bin/busybox sh 
+#!/system/bin/sh
  
 MODPATH="${0%/*}"
 

@@ -1,4 +1,7 @@
-#!/system/bin/busybox sh
+#!/system/bin/sh
+
+BUSYBOX="$(command -v busybox)"
+export PATH=/data/adb/ksu/bin:/data/adb/magisk:$PATH
 
 MODPATH="${0%/*}" # Get the directory where the script is located
 
@@ -12,10 +15,19 @@ MODPATH="${0%/*}" # Get the directory where the script is located
 # Wait for boot completion
 while [ "$(getprop sys.boot_completed)" != 1 ]; do sleep 2; done
 
-# Wait for the device to decrypt (if it's encrypted) when phone is unlocked once.
-until [ -d "/sdcard/Android" ]; do sleep 3; done
+# Wait until user-accessible storage becomes available.
+#
+# This avoids applying profile-dependent actions
+# too early on devices where storage initialization
+# happens after boot_completed.
+i=0
+while [ "$i" -lt 60 ]; do
+  [ -d /sdcard/Android ] && break
+  sleep 3
+  i=$((i + 1))
+done
 
-### Props ###
+### Core Property Management ###
 
 # Check cron status
 if [ -f "$MODPATH/disable_cron" ]; then
@@ -36,20 +48,20 @@ else
 fi
 
 if ! boolval "$_cron_disabled"; then
-  sh $MODPATH/propscleaner.sh &
+  # sh "$MODPATH/propscleaner.sh" &
 
   [ ! -f $MODPATH/crontabs/root ] && {
     mkdir -p $MODPATH/crontabs
-    echo "30 * * * * sh $MODPATH/propscleaner.sh > /dev/null 2>&1 &" | busybox crontab -c $MODPATH/crontabs - # once every 60 minutes
+    echo "30 * * * * sh $MODPATH/propscleaner.sh > /dev/null 2>&1 &" | "$BUSYBOX" crontab -c $MODPATH/crontabs - # once every 60 minutes
   }
 
   # Start crond every time service.sh starts
-  [ -d $MODPATH/crontabs ] && busybox crond -bc $MODPATH/crontabs -L /dev/null > /dev/null 2>&1 &
+  [ -d $MODPATH/crontabs ] && "$BUSYBOX" crond -bc $MODPATH/crontabs -L /dev/null > /dev/null 2>&1 &
 
   _cron_tag="[✅ Custom ROM spoofing,"
 else
   # Stop crond and remove crontab if disabled
-  busybox pkill -f "crond -bc $MODPATH/crontabs" 2>/dev/null
+  "$BUSYBOX" pkill -f "crond -bc $MODPATH/crontabs" 2>/dev/null
   rm -rf "$MODPATH/crontabs"
   # "Disable until Reboot" flag can't exist at this point
   _cron_tag="[❌ Custom ROM spoofing,"
@@ -97,7 +109,7 @@ for prop in ro.boot.warranty_bit ro.warranty_bit ro.vendor.boot.warranty_bit ro.
 done
 
 # Outdated PlayIntegrity pixelprops fix
-getprop | grep -E "pihook|pixelprops|eliteprops|spoof.gms" | sed -E "s/^\[(.*)\]:.*/\1/" | while IFS= read -r prop; do hexpatch_deleteprop "$prop"; done
+# getprop | grep -E "pihook|pixelprops|eliteprops|spoof.gms" | sed -E "s/^\[(.*)\]:.*/\1/" | while IFS= read -r prop; do hexpatch_deleteprop "$prop"; done
 
 ### General adjustments ###
 
@@ -124,8 +136,8 @@ check_resetprop ro.oem_unlock_supported 0
 check_resetprop net.tethering.noprovisioning true
 
 # ADBD/adb_root status spoofing
-check_resetprop init.svc.adbd stopped
-hexpatch_deleteprop init.svc.adb_root
+# check_resetprop init.svc.adbd stopped
+# hexpatch_deleteprop init.svc.adb_root
 
 # Init.rc adjustment
 check_resetprop init.svc.flash_recovery stopped
@@ -140,7 +152,7 @@ check_resetprop ro.secureboot.lockstate locked
 
 # Disable debugging and adb over network
 check_resetprop ro.force.debuggable 0
-check_resetprop ro.debuggable 0
+# check_resetprop ro.debuggable 0
 check_resetprop ro.adb.secure 1
 
 # Native Bridge (could break some features, appdome?)
@@ -149,6 +161,13 @@ check_resetprop ro.adb.secure 1
 # Adjust API level if necessary for software attestation
 # [ "$(resetprop -v ro.product.first_api_level)" -eq 33 ] && resetprop -v -n ro.product.first_api_level 32
 # [ "$(resetprop -v ro.product.first_api_level)" -ge 34 ] && resetprop -v -n ro.product.first_api_level 34
+
+# Apply user-selected persistent profile.
+#
+# This is executed after the module's default
+# corrections so profile values can intentionally
+# override built-in defaults.
+apply_custom_props
 
 ### System Settings ###
 

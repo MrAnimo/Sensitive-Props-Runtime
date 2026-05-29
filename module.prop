@@ -1,6 +1,6 @@
-id=sensitive_props
-name=Sensitive Props Mod
-version=v6.6.0-hexpatch
-versionCode=60600
-author=@T3SL4
-description=Reset sensitive properties to a safe state.
+id=sensitive_props_runtime
+name=Sensitive Props Runtime
+version=v0.1.0
+versionCode=100
+author=MrAnimo
+description=Persistent profiles, live property editing and KernelSU WebUI integration.
